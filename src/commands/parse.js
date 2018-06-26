@@ -11,20 +11,20 @@ export const command = 'parse [directory] [file]'
 export const desc = 'Parses TNEF files inside a specified directory'
 
 export const builder = {
-    directory: {
-        alias: 'd',
-        default: undefined,
-        type: 'string',
-        describe: 'Directory to scan and parse',
-        demandOption: false
-    },
-    file: {
-        alias: 'f',
-        default: undefined,
-        type: 'string',
-        describe: 'File to scan and parse',
-        demandOption: false
-    }
+  directory: {
+    alias: 'd',
+    default: undefined,
+    type: 'string',
+    describe: 'Directory to scan and parse',
+    demandOption: false
+  },
+  file: {
+    alias: 'f',
+    default: undefined,
+    type: 'string',
+    describe: 'File to scan and parse',
+    demandOption: false
+  }
 }
 
 const log = bunyan.createLogger({ name: 'node-tnef' })
@@ -71,17 +71,17 @@ const ATTOEMCODEPAGE = 0x9007 // OEM Codepage
 const ATTORIGNINALMESSAGECLASS = 0x9008 //Original Message Class
 
 export function handler(argv) {
-    const opts = parseOptions(argv)
+  const opts = parseOptions(argv)
 
-    if (opts && opts.directory) {
-        log.info('Begin iterating through the directory:' + opts.directory)
-        ProcessDirectory(opts.directory)
-    } else if (opts && opts.file) {
-        log.info('Begin parsing the file:' + opts.file)
-        ProcessFile(opts.file)
-    } else {
-        log.warn('No arguments specified!')
-    }
+  if (opts && opts.directory) {
+    log.info('Begin iterating through the directory:' + opts.directory)
+    ProcessDirectory(opts.directory)
+  } else if (opts && opts.file) {
+    log.info('Begin parsing the file:' + opts.file)
+    ProcessFile(opts.file)
+  } else {
+    log.warn('No arguments specified!')
+  }
 }
 
 /**
@@ -101,210 +101,210 @@ export function handler(argv) {
 // method that can be used within another Node module to parse a single
 // TNEF file given the file path and a callback
 export function parse(filePath, callback) {
-    log.info('ATTEMPTING TO PARSE ' + filePath);
+  log.info('ATTEMPTING TO PARSE ' + filePath);
 
-    DecodeFile(filePath).then((result) => {
-        // if there is an attachment, extract it and save to file
-        if (result && result.Attachments && result.Attachments.length > 0) {
-            log.info('Done decoding ' + filePath + '!!')
-            callback(false, result.Attachments)
-        } else {
-            log.warn('Something went wrong with parsing ' + filePath + '. Make sure this is a TNEF file. If you are certain it is, possibly the file is corrupt')
-            callback(true, null)
-        }
-    }).catch((err) => {
-        log.error('Something went wrong parsing ' + filePath, err)
-        callback(true, err)
-    })
+  DecodeFile(filePath).then((result) => {
+    // if there is an attachment, extract it and save to file
+    if (result && result.Attachments && result.Attachments.length > 0) {
+      log.info('Done decoding ' + filePath + '!!')
+      callback(false, result.Attachments)
+    } else {
+      log.warn('Something went wrong with parsing ' + filePath + '. Make sure this is a TNEF file. If you are certain it is, possibly the file is corrupt')
+      callback(true, null)
+    }
+  }).catch((err) => {
+    log.error('Something went wrong parsing ' + filePath, err)
+    callback(true, err)
+  })
 }
 
 function parseOptions(argv) {
-    if (!argv) {
-        throw new Error('No arguments provided!')
-    }
+  if (!argv) {
+    throw new Error('No arguments provided!')
+  }
 
-    return argv
+  return argv
 }
 
 // right now, adds just the attachment title and data
 var addAttr = ((obj, attachment) => {
-    switch (obj.Name) {
-        case ATTATTACHTITLE:
-            var byteString = convertString.bytesToString(obj.Data)
-            attachment.Title = byteString.replaceAll('\x00', '')
-            break;
-        case ATTATTACHDATA:
-            attachment.Data = obj.Data
-            break;
-    }
+  switch (obj.Name) {
+    case ATTATTACHTITLE:
+      var byteString = convertString.bytesToString(obj.Data)
+      attachment.Title = byteString.replaceAll('\x00', '')
+      break;
+    case ATTATTACHDATA:
+      attachment.Data = obj.Data
+      break;
+  }
 })
 
 // DecodeFile is a utility function that reads the file into memory
 // before calling the normal Decode function on the data.
 var DecodeFile = ((path) => {
-    return new Promise((resolve, reject) => {
-        log.info('Read the supposed TNEF file: ' + path)
+  return new Promise((resolve, reject) => {
+    log.info('Read the supposed TNEF file: ' + path)
 
-        fs.readFile(path, (err, data) => {
-            if (!err) {
-                var arr = [...data]
-                resolve(Decode(arr, path))
-            } else {
-                log.error(err);
-                reject(err)
-            }
-        })
+    fs.readFile(path, (err, data) => {
+      if (!err) {
+        var arr = [...data]
+        resolve(Decode(arr, path))
+      } else {
+        log.error(err);
+        reject(err)
+      }
     })
+  })
 })
 
 // Decode will accept a stream of bytes in the TNEF format and extract the
 // attachments and body into a Data object.
-var Decode = ((data, path) => {
+export function Decode(data, path) {
 
-    // get the first 32 bits of the file
-    var signature = utils.processBytesToInteger(data, 0, 4)
+  // get the first 32 bits of the file
+  var signature = utils.processBytesToInteger(data, 0, 4)
 
-    // if the signature we get doesn't match the TNEF signature, exit
-    if (signature !== tnefSignature) {
-        log.warn('Value of ' + signature + ' did not equal the expected value of ' + tnefSignature)
-        return null
+  // if the signature we get doesn't match the TNEF signature, exit
+  if (signature !== tnefSignature) {
+    log.warn('Value of ' + signature + ' did not equal the expected value of ' + tnefSignature)
+    return null
+  }
+
+  log.info('Found a valid TNEF signature for ' + path)
+
+  // set the starting offset past the signature
+  var offset = 6
+  var attachment = null
+  var tnef = {}
+  tnef.Attachments = []
+
+  // iterate through the data
+  while (offset < data.length) {
+    // get only the data within the range of offset and the array length
+    var tempData = utils.processBytes(data, offset, data.length)
+    // decode the TNEF objects
+    var obj = decodeTNEFObject(tempData)
+
+    if (!obj) {
+      log.error('Did not get a TNEF object back from file ' + path + ', exit')
+      break;
     }
 
-    log.info('Found a valid TNEF signature for ' + path)
+    // increment offset based on the returned object's length
+    offset += obj.Length
 
-    // set the starting offset past the signature
-    var offset = 6
-    var attachment = null
-    var tnef = {}
-    tnef.Attachments = []
+    // append attributes and attachments
+    if (obj.Name === ATTATTACHRENDDATA) {
+      // create an empty attachment object to prepare for population
+      attachment = {}
+      tnef.Attachments.push(attachment)
+    } else if (obj.Level === lvlAttachment) {
+      // add the attachments
+      addAttr(obj, attachment)
+    } else if (obj.Name === ATTMAPIPROPS) {
+      tnef.Attributes = mapi.decodeMapi(obj.Data)
 
-    // iterate through the data
-    while (offset < data.length) {
-        // get only the data within the range of offset and the array length
-        var tempData = utils.processBytes(data, offset, data.length)
-        // decode the TNEF objects
-        var obj = decodeTNEFObject(tempData)
-
-        if (!obj) {
-            log.error('Did not get a TNEF object back from file ' + path + ', exit')
-            break;
+      // get the body property if it exists
+      for (var attr in tnef.Attributes) {
+        switch (attr.Name) {
+          case mapi.MAPIBody:
+            tnef.Body = attr.Data
+          case mapi.MAPIBodyHTML:
+            tnef.BodyHTML = attr.Data
         }
-
-        // increment offset based on the returned object's length
-        offset += obj.Length
-
-        // append attributes and attachments
-        if (obj.Name === ATTATTACHRENDDATA) {
-            // create an empty attachment object to prepare for population
-            attachment = {}
-            tnef.Attachments.push(attachment)
-        } else if (obj.Level === lvlAttachment) {
-            // add the attachments
-            addAttr(obj, attachment)
-        } else if (obj.Name === ATTMAPIPROPS) {
-            tnef.Attributes = mapi.decodeMapi(obj.Data)
-
-            // get the body property if it exists
-            for (var attr in tnef.Attributes) {
-                switch (attr.Name) {
-                    case mapi.MAPIBody:
-                        tnef.Body = attr.Data
-                    case mapi.MAPIBodyHTML:
-                        tnef.BodyHTML = attr.Data
-                }
-            }
-        }
+      }
     }
+  }
 
-    // return the final TNEF object
-    return tnef
-})
+  // return the final TNEF object
+  return tnef
+}
 
 var decodeTNEFObject = ((data) => {
-    var tnefObject = {}
-    var offset = 0
-    var object = {}
+  var tnefObject = {}
+  var offset = 0
+  var object = {}
 
-    // level
-    object.Level = utils.processBytesToInteger(data, offset, 1)
-    offset++
+  // level
+  object.Level = utils.processBytesToInteger(data, offset, 1)
+  offset++
 
-    // name
-    object.Name = utils.processBytesToInteger(data, offset, 2)
-    offset += 2
+  // name
+  object.Name = utils.processBytesToInteger(data, offset, 2)
+  offset += 2
 
-    // type
-    object.Type = utils.processBytesToInteger(data, offset, 2)
-    offset += 2
+  // type
+  object.Type = utils.processBytesToInteger(data, offset, 2)
+  offset += 2
 
-    // attribute length
-    var attLength = utils.processBytesToInteger(data, offset, 4)
-    offset += 4
+  // attribute length
+  var attLength = utils.processBytesToInteger(data, offset, 4)
+  offset += 4
 
-    // data
-    object.Data = utils.processBytes(data, offset, attLength)
-    offset += attLength
-    offset += 2
+  // data
+  object.Data = utils.processBytes(data, offset, attLength)
+  offset += attLength
+  offset += 2
 
-    // length
-    object.Length = offset
+  // length
+  object.Length = offset
 
-    return object
+  return object
 })
 
 var ProcessDirectory = ((directory) => {
-    // get the directory path from commandline arguments
-    // iterate through each file, and run DecodeFile
-    fs.readdir(directory, (err, files) => {
-        if (err) {
-            log.error('Could not list the directory: ', err)
-            process.exit(1)
-        }
+  // get the directory path from commandline arguments
+  // iterate through each file, and run DecodeFile
+  fs.readdir(directory, (err, files) => {
+    if (err) {
+      log.error('Could not list the directory: ', err)
+      process.exit(1)
+    }
 
-        Promise.each(files, (file) => {
-            return ProcessFile(file, directory)
-        })
+    Promise.each(files, (file) => {
+      return ProcessFile(file, directory)
     })
+  })
 })
 
 // process a single file
 var ProcessFile = ((file, directory) => {
-    return new Promise((resolve, reject) => {
-        var fullPath = file
-        var processedPath = path.join(path.dirname(file), 'processed')
+  return new Promise((resolve, reject) => {
+    var fullPath = file
+    var processedPath = path.join(path.dirname(file), 'processed')
 
-        if (directory) {
-            fullPath = path.join(directory, file)
-            processedPath = path.join(directory, 'processed')
-        }
+    if (directory) {
+      fullPath = path.join(directory, file)
+      processedPath = path.join(directory, 'processed')
+    }
 
-        if (!fs.existsSync(processedPath)) {
-            fs.mkdirSync(processedPath)
-        }
-        
-        log.info('ATTEMPTING TO PARSE ' + fullPath);
+    if (!fs.existsSync(processedPath)) {
+      fs.mkdirSync(processedPath)
+    }
 
-        DecodeFile(fullPath).then((result) => {
-            // if there is an attachment, extract it and save to file
-            if (result && result.Attachments && result.Attachments.length > 0) {
-                for (var a in result.Attachments) {
-                    var attachment = result.Attachments[a]
+    log.info('ATTEMPTING TO PARSE ' + fullPath);
 
-                    fs.writeFile(path.join(processedPath, attachment.Title), new Buffer(attachment.Data), (err) => {
-                        log.error(err)
-                        reject(err)
-                    })
-                }
+    DecodeFile(fullPath).then((result) => {
+      // if there is an attachment, extract it and save to file
+      if (result && result.Attachments && result.Attachments.length > 0) {
+        for (var a in result.Attachments) {
+          var attachment = result.Attachments[a]
 
-                log.info('Done decoding ' + fullPath + '!!')
-                resolve(null)
-            } else {
-                log.warn('Something went wrong with parsing ' + fullPath + '. Make sure this is a TNEF file. If you are certain it is, possibly the file is corrupt')
-                resolve(null)
-            }
-        }).catch((err) => {
-            log.error('Something went wrong parsing ' + fullPath, err)
+          fs.writeFile(path.join(processedPath, attachment.Title), new Buffer(attachment.Data), (err) => {
+            log.error(err)
             reject(err)
-        })
+          })
+        }
+
+        log.info('Done decoding ' + fullPath + '!!')
+        resolve(null)
+      } else {
+        log.warn('Something went wrong with parsing ' + fullPath + '. Make sure this is a TNEF file. If you are certain it is, possibly the file is corrupt')
+        resolve(null)
+      }
+    }).catch((err) => {
+      log.error('Something went wrong parsing ' + fullPath, err)
+      reject(err)
     })
+  })
 })
