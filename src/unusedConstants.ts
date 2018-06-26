@@ -1,0 +1,35 @@
+const lvlMessage = 0x01;
+
+const szmapiUnspecified = 0x0000; // # MAPI Unspecified
+const szmapiNull = 0x0001; // # MAPI null property
+const szmapiPtSystime = 0x001E; // # MAPI time (between 2038/01/17 22:14:07 and 1970/01/01 00:00:00)
+const szmapiUnknown = 0x0033;
+
+const ATTOWNER = 0x0000; // Owner
+const ATTSENTFOR = 0x0001; // Sent For
+const ATTDELEGATE = 0x0002; // Delegate
+const ATTDATESTART = 0x0006; // Date Start
+const ATTDATEEND = 0x0007; // Date End
+const ATTAIDOWNER = 0x0008; // Owner Appointment ID
+const ATTREQUESTRES = 0x0009; // Response Requested
+const ATTFROM = 0x8000; // From
+const ATTSUBJECT = 0x8004; // Subject
+const ATTDATESENT = 0x8005; // Date Sent
+const ATTDATERECD = 0x8006; // Date Received
+const ATTMESSAGESTATUS = 0x8007; // Message Status
+const ATTMESSAGECLASS = 0x8008; // Message Class
+const ATTMESSAGEID = 0x8009; // Message ID
+const ATTPARENTID = 0x800A; // Parent ID
+const ATTCONVERSATIONID = 0x800B; // Conversation ID
+const ATTBODY = 0x800C; // Body
+const ATTPRIORITY = 0x800D; // Priority
+const ATTATTACHMETAFILE = 0x8011; // Attachment Meta File
+const ATTATTACHCREATEDATE = 0x8012; // Attachment Creation Date
+const ATTATTACHMODIFYDATE = 0x8013; // Attachment Modification Date
+const ATTDATEMODIFY = 0x8020; // Date Modified
+const ATTATTACHTRANSPORTFILENAME = 0x9001; // Attachment Transport File Name
+const ATTRECIPTABLE = 0x9004; // Receipients
+const ATTATTACHMENT = 0x9005; // Attachment
+const ATTTNEFVERSION = 0x9006; // TNEF Version
+const ATTOEMCODEPAGE = 0x9007; // OEM Codepage
+const ATTORIGNINALMESSAGECLASS = 0x9008; // Original Message Class
